@@ -1,27 +1,29 @@
+import { useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import Dashboard from "../pages/Dashboard/Dashboard";
+import DetectionPage from "../pages/Detection/DetectionPage";
 import DatasetsPage from "../pages/Datasets/DatasetsPage";
+import InsightsPage from "../pages/Insights/InsightsPage";
 import ModelsPage from "../pages/Models/ModelsPage";
-
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-6">
-      <h1 className="text-2xl font-semibold text-white">{title}</h1>
-      <p className="mt-2 text-slate-400">This module will be implemented in the next phase.</p>
-    </section>
-  );
-}
+import type { DetectionRun } from "../types/detection";
 
 function AppRouter() {
+  const [selectedDetection, setSelectedDetection] = useState<DetectionRun | null>(null);
+
   return (
     <DashboardLayout>
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/datasets" element={<DatasetsPage />} />
         <Route path="/models" element={<ModelsPage />} />
-        <Route path="/detection" element={<PlaceholderPage title="Detection" />} />
-        <Route path="/insights" element={<PlaceholderPage title="AI Insights" />} />
+        <Route
+          path="/detection"
+          element={
+            <DetectionPage selectedDetection={selectedDetection} onDetectionComplete={setSelectedDetection} />
+          }
+        />
+        <Route path="/insights" element={<InsightsPage selectedDetection={selectedDetection} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </DashboardLayout>
