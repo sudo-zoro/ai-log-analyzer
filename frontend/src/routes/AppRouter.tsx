@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import Dashboard from "../pages/Dashboard/Dashboard";
+import DatasetsPage from "../pages/Datasets/DatasetsPage";
+import ModelsPage from "../pages/Models/ModelsPage";
 
 function PlaceholderPage({ title }: { title: string }) {
   return (
@@ -16,8 +18,8 @@ function AppRouter() {
     <DashboardLayout>
       <Routes>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/datasets" element={<PlaceholderPage title="Datasets" />} />
-        <Route path="/models" element={<PlaceholderPage title="Models" />} />
+        <Route path="/datasets" element={<DatasetsPage />} />
+        <Route path="/models" element={<ModelsPage />} />
         <Route path="/detection" element={<PlaceholderPage title="Detection" />} />
         <Route path="/insights" element={<PlaceholderPage title="AI Insights" />} />
         <Route path="*" element={<Navigate to="/" replace />} />
