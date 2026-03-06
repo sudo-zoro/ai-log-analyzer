@@ -1,15 +1,12 @@
 """
 Detection Service — runs anomaly detection using a registered model.
 """
-import uuid
 import pandas as pd
-from pathlib import Path
-from fastapi import UploadFile, HTTPException
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.models.detection_run import DetectionRun
 from app.models.ml_model import MLModel
 from app.ml_engine.detector import run_detection
-from app.core.config import settings
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -42,6 +39,9 @@ def run_detection_job(
             model_path=model.model_path,
             scaler_path=model.scaler_path,
             feature_columns=model.feature_columns or [],
+            algorithm=model.algorithm,
+            hyperparameters=model.hyperparameters or {},
+            metrics=model.metrics or {},
         )
         detection.total_rows = results["total_rows"]
         detection.anomaly_count = results["anomaly_count"]

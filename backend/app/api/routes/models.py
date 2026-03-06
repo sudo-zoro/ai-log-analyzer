@@ -1,5 +1,5 @@
 """ML model training and registry API routes."""
-from fastapi import APIRouter, Depends, Body
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 from datetime import datetime
@@ -13,8 +13,8 @@ router = APIRouter()
 class TrainRequest(BaseModel):
     dataset_id: str
     model_name: str
-    n_estimators: int = Field(default=100, ge=10, le=1000)
-    contamination: float = Field(default=0.05, gt=0.0, le=0.5)
+    algorithm: str = Field(default="isolation_forest")
+    hyperparameters: dict[str, Any] | None = None
 
 
 class ModelResponse(BaseModel):
@@ -34,13 +34,13 @@ class ModelResponse(BaseModel):
 
 @router.post("/train", response_model=ModelResponse, status_code=201)
 def train_model(request: TrainRequest, db: Session = Depends(get_db)):
-    """Train an Isolation Forest model on a dataset."""
+    """Train a supported anomaly model on a dataset."""
     return ml_service.start_training(
         db=db,
         dataset_id=request.dataset_id,
         model_name=request.model_name,
-        n_estimators=request.n_estimators,
-        contamination=request.contamination,
+        algorithm=request.algorithm,
+        hyperparameters=request.hyperparameters,
     )
 
 

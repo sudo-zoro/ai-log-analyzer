@@ -33,6 +33,9 @@ def run_detection(
     model_path: str,
     scaler_path: str,
     feature_columns: list[str],
+    algorithm: str = "isolation_forest",
+    hyperparameters: dict | None = None,
+    metrics: dict | None = None,
 ) -> dict:
     """
     Run anomaly detection on a log DataFrame.
@@ -58,8 +61,24 @@ def run_detection(
     feature_df = feature_df[feature_columns]
 
     X = scaler.transform(feature_df.values)
-    predictions = model.predict(X)           # 1=normal, -1=anomaly
-    scores = model.decision_function(X)      # lower = more anomalous
+
+    if algorithm in {"isolation_forest", "one_class_svm"}:
+        predictions = model.predict(X)  # 1=normal, -1=anomaly
+        scores = model.decision_function(X)  # lower = more anomalous
+    elif algorithm == "autoencoder":
+        recon = model.predict(X)
+        reconstruction_errors = np.mean(np.square(X - recon), axis=1)
+        threshold = float((metrics or {}).get("reconstruction_threshold", 0.0))
+
+        if threshold <= 0:
+            contamination = float((hyperparameters or {}).get("contamination", 0.05))
+            threshold = float(np.percentile(reconstruction_errors, 100 * (1 - contamination)))
+
+        predictions = np.where(reconstruction_errors > threshold, -1, 1)
+        # Lower score should mean more anomalous for consistent sorting.
+        scores = threshold - reconstruction_errors
+    else:
+        raise ValueError(f"Unsupported algorithm '{algorithm}'.")
 
     total_rows = len(df)
     anomaly_mask = predictions == -1
