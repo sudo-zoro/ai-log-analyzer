@@ -1,13 +1,23 @@
+export type ModelAlgorithm = "isolation_forest" | "one_class_svm" | "autoencoder";
+
 export type TrainModelPayload = {
   dataset_id: string;
   model_name: string;
-  n_estimators: number;
-  contamination: number;
+  algorithm: ModelAlgorithm;
+  hyperparameters: Record<string, unknown>;
 };
 
 export type ModelMetrics = {
   n_estimators?: number;
   contamination?: number;
+  kernel?: string;
+  nu?: number;
+  gamma?: string | number;
+  hidden_dim?: number;
+  epochs?: number;
+  batch_size?: number;
+  learning_rate?: number;
+  reconstruction_threshold?: number;
   total_samples?: number;
   feature_count?: number;
   predicted_anomaly_count?: number;
