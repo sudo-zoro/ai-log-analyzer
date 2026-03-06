@@ -10,7 +10,8 @@ const navItems = [
 
 function Sidebar() {
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-slate-800/80 bg-slate-950/80 backdrop-blur">
+   <aside className="flex h-screen w-64 flex-col border-r border-slate-800/80 bg-slate-950/80 backdrop-blur">
+
       <div className="border-b border-slate-800/80 px-6 py-5">
         <p className="text-xs uppercase tracking-[0.22em] text-cyan-400/80">SecRAG Console</p>
         <h1 className="mt-1 text-xl font-semibold text-slate-100">Security Ops</h1>
@@ -35,7 +36,8 @@ function Sidebar() {
         ))}
       </nav>
 
-      <div className="border-t border-slate-800/80 px-4 py-4 text-xs text-slate-500">v0.1.0</div>
+     <div className="mt-auto border-t border-slate-800/80 px-4 py-4 text-xs text-slate-500">v0.1.0</div>
+
     </aside>
   );
 }
