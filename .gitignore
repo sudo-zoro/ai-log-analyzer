@@ -21,6 +21,7 @@ backend/chroma_db/
 backend/app/__pycache__/
 backend/app/api/__pycache__/
 backend/app/api/routes/__pycache__/
+backend/app/core/__pycache__/
 
 # Frontend (Vite / Node)
 frontend/node_modules/
