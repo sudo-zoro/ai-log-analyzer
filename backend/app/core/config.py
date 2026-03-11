@@ -1,18 +1,19 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 from pathlib import Path
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     # Application
     APP_ENV: str = "development"
     APP_DEBUG: bool = True
-    SECRET_KEY: str = "dev-secret-key"
+    SECRET_KEY: str = Field(..., min_length=16)
     APP_NAME: str = "SecRAG AI"
     APP_VERSION: str = "0.1.0"
 
     # Database
-    DATABASE_URL: str = "postgresql://secrag:secrag@localhost:5432/secrag_db"
+    DATABASE_URL: str = Field(...)
 
     # Storage paths
     UPLOAD_DIR: str = "./uploads"
