@@ -17,6 +17,7 @@ backend/.env
 backend/uploads/
 backend/stored_models/
 backend/chroma_db/
+
 backend/app/__pycache__/
 backend/app/api/__pycache__/
 backend/app/api/routes/__pycache__/
