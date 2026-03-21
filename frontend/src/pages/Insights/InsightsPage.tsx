@@ -1,6 +1,4 @@
-import { useMemo } from "react";
-import axios from "axios";
-import { useInsights } from "../../hooks/useInsights";
+import { useAnalysisSession } from "../../context/AnalysisSessionContext";
 import type { DetectionRun } from "../../types/detection";
 
 type InsightsPageProps = {
@@ -8,33 +6,22 @@ type InsightsPageProps = {
 };
 
 function InsightsPage({ selectedDetection }: InsightsPageProps) {
-  const insightsMutation = useInsights();
-
+  const { generateDetectionInsights, insights, insightsError, isGeneratingInsights } = useAnalysisSession();
   const anomalies = selectedDetection?.results?.anomalies ?? [];
-
-  const insightsError = useMemo(() => {
-    if (!insightsMutation.error) {
-      return "";
-    }
-    if (axios.isAxiosError(insightsMutation.error)) {
-      return (insightsMutation.error.response?.data as { detail?: string } | undefined)?.detail ?? insightsMutation.error.message;
-    }
-    return "Failed to generate insights.";
-  }, [insightsMutation.error]);
 
   const onGenerate = () => {
     if (!selectedDetection || anomalies.length === 0) {
       return;
     }
 
-    insightsMutation.mutate({
+    generateDetectionInsights({
       anomaly_rows: anomalies.map((item) => item.raw_row),
       anomaly_count: selectedDetection.anomaly_count ?? anomalies.length,
       anomaly_ratio: selectedDetection.anomaly_ratio ?? 0,
     });
   };
 
-  const data = insightsMutation.data;
+  const data = insights;
 
   return (
     <section className="space-y-6">
@@ -65,9 +52,9 @@ function InsightsPage({ selectedDetection }: InsightsPageProps) {
               className="rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
               type="button"
               onClick={onGenerate}
-              disabled={anomalies.length === 0 || insightsMutation.isPending}
+              disabled={anomalies.length === 0 || isGeneratingInsights}
             >
-              {insightsMutation.isPending ? "Generating..." : "Generate AI Explanation"}
+              {isGeneratingInsights ? "Generating..." : "Generate AI Explanation"}
             </button>
           </div>
         ) : (
