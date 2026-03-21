@@ -1,10 +1,13 @@
 import { BrowserRouter } from "react-router-dom";
+import { AnalysisSessionProvider } from "./context/AnalysisSessionContext";
 import AppRouter from "./routes/AppRouter";
 
 function App() {
   return (
     <BrowserRouter>
-      <AppRouter />
+      <AnalysisSessionProvider>
+        <AppRouter />
+      </AnalysisSessionProvider>
     </BrowserRouter>
   );
 }

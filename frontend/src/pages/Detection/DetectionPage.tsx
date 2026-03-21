@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useAnalysisSession } from "../../context/AnalysisSessionContext";
 import { useRunDetection } from "../../hooks/useDetection";
 import { useModels } from "../../hooks/useModels";
 import type { DetectionRun } from "../../types/detection";
@@ -12,6 +13,7 @@ type DetectionPageProps = {
 
 function DetectionPage({ selectedDetection, onDetectionComplete }: DetectionPageProps) {
   const navigate = useNavigate();
+  const { clearInsights } = useAnalysisSession();
   const modelsQuery = useModels();
   const detectionMutation = useRunDetection();
 
@@ -46,6 +48,7 @@ function DetectionPage({ selectedDetection, onDetectionComplete }: DetectionPage
       { model_id: modelId, file },
       {
         onSuccess: (result) => {
+          clearInsights();
           onDetectionComplete(result);
           event.currentTarget.reset();
           setFile(null);

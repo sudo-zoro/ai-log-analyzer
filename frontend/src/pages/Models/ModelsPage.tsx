@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
-import axios from "axios";
+import { useEffect, useMemo, useState } from "react";
+import { useAnalysisSession } from "../../context/AnalysisSessionContext";
 import { useDatasets } from "../../hooks/useDatasets";
-import { useDeleteModel, useModels, useTrainModel } from "../../hooks/useModels";
+import { useDeleteModel, useModels } from "../../hooks/useModels";
 import type { ModelAlgorithm } from "../../types/model";
 import { formatDateTime } from "../../utils/format";
 
@@ -31,36 +31,35 @@ function previewHyperparameters(params: Record<string, unknown> | null): string 
 function ModelsPage() {
   const datasetsQuery = useDatasets();
   const modelsQuery = useModels();
-  const trainMutation = useTrainModel();
+  const {
+    activeTrainingRequest,
+    clearModelTraining,
+    isTrainingModel,
+    latestTrainedModel,
+    startModelTraining,
+    trainingModelError,
+  } = useAnalysisSession();
   const deleteMutation = useDeleteModel();
 
-  const [datasetId, setDatasetId] = useState("");
-  const [modelName, setModelName] = useState("");
-  const [algorithm, setAlgorithm] = useState<ModelAlgorithm>("isolation_forest");
+  const [datasetId, setDatasetId] = useState(activeTrainingRequest?.dataset_id ?? "");
+  const [modelName, setModelName] = useState(activeTrainingRequest?.model_name ?? "");
+  const [algorithm, setAlgorithm] = useState<ModelAlgorithm>(activeTrainingRequest?.algorithm ?? "isolation_forest");
 
-  const [nEstimators, setNEstimators] = useState(100);
-  const [contamination, setContamination] = useState(0.05);
+  const [nEstimators, setNEstimators] = useState(Number(activeTrainingRequest?.hyperparameters?.n_estimators ?? 100));
+  const [contamination, setContamination] = useState(Number(activeTrainingRequest?.hyperparameters?.contamination ?? 0.05));
 
-  const [kernel, setKernel] = useState("rbf");
-  const [nu, setNu] = useState(0.05);
-  const [gamma, setGamma] = useState("scale");
-  const [hiddenDim, setHiddenDim] = useState(16);
-  const [epochs, setEpochs] = useState(80);
-  const [batchSize, setBatchSize] = useState(32);
-  const [learningRate, setLearningRate] = useState(0.001);
-  const [aeContamination, setAeContamination] = useState(0.05);
+  const [kernel, setKernel] = useState(String(activeTrainingRequest?.hyperparameters?.kernel ?? "rbf"));
+  const [nu, setNu] = useState(Number(activeTrainingRequest?.hyperparameters?.nu ?? 0.05));
+  const [gamma, setGamma] = useState(String(activeTrainingRequest?.hyperparameters?.gamma ?? "scale"));
+  const [hiddenDim, setHiddenDim] = useState(Number(activeTrainingRequest?.hyperparameters?.hidden_dim ?? 16));
+  const [epochs, setEpochs] = useState(Number(activeTrainingRequest?.hyperparameters?.epochs ?? 80));
+  const [batchSize, setBatchSize] = useState(Number(activeTrainingRequest?.hyperparameters?.batch_size ?? 32));
+  const [learningRate, setLearningRate] = useState(Number(activeTrainingRequest?.hyperparameters?.learning_rate ?? 0.001));
+  const [aeContamination, setAeContamination] = useState(
+    Number(activeTrainingRequest?.hyperparameters?.contamination ?? 0.05),
+  );
   const [algorithmFilter, setAlgorithmFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-
-  const trainingError = useMemo(() => {
-    if (!trainMutation.error) {
-      return "";
-    }
-    if (axios.isAxiosError(trainMutation.error)) {
-      return (trainMutation.error.response?.data as { detail?: string } | undefined)?.detail ?? trainMutation.error.message;
-    }
-    return "Training failed.";
-  }, [trainMutation.error]);
 
   const filteredModels = useMemo(() => {
     return (modelsQuery.data ?? []).filter((model) => {
@@ -69,6 +68,14 @@ function ModelsPage() {
       return algorithmMatch && statusMatch;
     });
   }, [algorithmFilter, statusFilter, modelsQuery.data]);
+
+  useEffect(() => {
+    if (!latestTrainedModel) {
+      return;
+    }
+
+    setModelName("");
+  }, [latestTrainedModel]);
 
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -98,19 +105,12 @@ function ModelsPage() {
       };
     }
 
-    trainMutation.mutate(
-      {
-        dataset_id: datasetId,
-        model_name: modelName.trim(),
-        algorithm,
-        hyperparameters,
-      },
-      {
-        onSuccess: () => {
-          setModelName("");
-        },
-      },
-    );
+    startModelTraining({
+      dataset_id: datasetId,
+      model_name: modelName.trim(),
+      algorithm,
+      hyperparameters,
+    });
   };
 
   return (
@@ -124,6 +124,27 @@ function ModelsPage() {
         <article className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
           <h2 className="text-lg font-semibold text-slate-100">Train Model</h2>
           <p className="mt-1 text-sm text-slate-400">Choose dataset, algorithm, and algorithm-specific hyperparameters.</p>
+
+          {isTrainingModel ? (
+            <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+              Training is in progress. You can navigate to other pages and come back without losing this session.
+            </div>
+          ) : null}
+
+          {latestTrainedModel ? (
+            <div className="mt-4 flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+              <span>
+                Last completed training: <strong>{latestTrainedModel.name}</strong> ({formatAlgorithmLabel(latestTrainedModel.algorithm)})
+              </span>
+              <button
+                className="rounded-md border border-emerald-400/30 px-3 py-1 text-xs text-emerald-100 hover:bg-emerald-500/10"
+                type="button"
+                onClick={clearModelTraining}
+              >
+                Clear
+              </button>
+            </div>
+          ) : null}
 
           <form className="mt-4 space-y-4" onSubmit={onSubmit}>
             <label className="block space-y-1">
@@ -318,14 +339,14 @@ function ModelsPage() {
               </div>
             )}
 
-            {trainingError ? <p className="text-sm text-rose-400">{trainingError}</p> : null}
+            {trainingModelError ? <p className="text-sm text-rose-400">{trainingModelError}</p> : null}
 
             <button
               className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
               type="submit"
-              disabled={trainMutation.isPending || datasetsQuery.isLoading || (datasetsQuery.data?.length ?? 0) === 0}
+              disabled={isTrainingModel || datasetsQuery.isLoading || (datasetsQuery.data?.length ?? 0) === 0}
             >
-              {trainMutation.isPending ? "Training..." : "Train Model"}
+              {isTrainingModel ? "Training..." : "Train Model"}
             </button>
           </form>
         </article>
